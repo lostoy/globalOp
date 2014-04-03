@@ -9,19 +9,31 @@ set(Boost_USE_MULTITHREAD )
 set(Boost_NO_BOOST_CMAKE ON)
 
 find_package(Boost COMPONENTS filesystem system REQUIRED)
-
+find_package(PCL 1.2 REQUIRED COMPONENTS common io io_ply)
 
 include_directories(${Boost_INCLUDE_DIRS} "C:/Program Files (x86)/Eigen/include")
 
 
 set(
-srcs src/main.cpp
+srcs_op src/main.cpp
 )  
 
+set(
+srcs_view src/view_main.cpp)
 
-add_executable(GlobalOp ${srcs} )
+set(
+srcs_transform src/transform_main.cpp)
 
+add_definitions(${PCL_DEFINITIONS})
+include_directories(${PCL_INCLUDE_DIRS})
+
+add_executable(GlobalOp ${srcs_op} )
+add_executable(ViewOp ${srcs_view})
+add_executable(TransformOp ${srcs_transform})
 
 target_link_libraries(GlobalOp ${Boost_LIBRARIES} )
+target_link_libraries(ViewOp ${Boost_LIBRARIES})
+
+target_link_libraries(TransformOp ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
 

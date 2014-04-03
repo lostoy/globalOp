@@ -29,7 +29,8 @@ public:
 	Eigen::Matrix4f matrix;
 
 	int id;
-	
+	std::string path;
+
 	Vector7f matrix2quat()
 	{
 		Vector7f ans;
@@ -97,12 +98,20 @@ int getFrameIDFromPath(std::string path)
 	int se = filename.find_last_of("_mat");
 	return (atoi(filename.substr(0, se).c_str()));
 }
-void addVEFromDir(std::string path, std::string pre_frameid, std::string next_frameid, Eigen::Matrix4f &transform, std::vector<Vertex> & vertices, std::vector<Edge> &edges, std::map<std::string, int> &idmap,bool edge_only)
+
+std::string int2string(int a)
+{
+
+	std::stringstream  ss;
+	ss<<a;
+	return ss.str();
+}
+void addVEFromDir(std::string path, std::string pre_folder,std::string pre_frameid, std::string next_folder,std::string next_frameid, Eigen::Matrix4f &transform, std::vector<Vertex> & vertices, std::vector<Edge> &edges, std::map<std::string, int> &idmap,bool edge_only)
 {
 	if (edge_only)
 	{
-		int id_pre=idmap[pre_frameid];
-		int id_next=idmap[next_frameid];
+		int id_pre=idmap[pre_folder+pre_frameid];
+		int id_next=idmap[next_folder+next_frameid];
 		Edge e;
 		e.pre_v=id_pre;
 		e.next_v=id_next;
@@ -124,8 +133,9 @@ void addVEFromDir(std::string path, std::string pre_frameid, std::string next_fr
 		Vertex v;
 		
 		v.id = vertices.size();
-				
-		idmap[path+next_frameid] = v.id;
+		v.path=Files[i];
+		
+		idmap[(pre_frameid==""?pre_folder:next_folder)+int2string(getFrameIDFromPath(Files[i]))] = v.id;
 
 		std::fstream file(Files[i], std::ios::in);
 		for (int r = 0; r < 4;r++)
@@ -152,9 +162,9 @@ void addVEFromDir(std::string path, std::string pre_frameid, std::string next_fr
 	//transform the vetrices
 	if (pre_frameid != "")
 	{
-		Eigen::Matrix4f last_transform = vertices[idmap[pre_frameid]].matrix, inc_transform = transform;
+		Eigen::Matrix4f last_transform = vertices[idmap[pre_folder+pre_frameid]].matrix, inc_transform = transform;
 
-		for (int i = idmap[next_frameid]; i >= startid; i--)
+		for (int i = idmap[next_folder+next_frameid]; i >= startid; i--)
 		{
 			Eigen::Matrix4f tmp = vertices[i].matrix.inverse();
 
@@ -163,24 +173,25 @@ void addVEFromDir(std::string path, std::string pre_frameid, std::string next_fr
 			inc_transform = tmp;
 		}
 
-		last_transform = vertices[idmap[next_frameid]].matrix;
-		for (int i = idmap[next_frameid]+1; i < vertices.size(); i++)
+		last_transform = vertices[idmap[next_folder+next_frameid]].matrix;
+		for (int i = idmap[next_folder+next_frameid]+1; i < vertices.size(); i++)
 		{
 			vertices[i].matrix = last_transform*vertices[i].matrix;
 		}
+		Edge e;
+		e.id = edges.size();
+		e.info = Eigen::Matrix<float, 6, 6>::Identity() * 1000.0;
+		e.pre_v = idmap[pre_folder+pre_frameid];
+		e.next_v = idmap[next_folder+next_frameid];
+		e.transform = transform;
+		edges.push_back(e);
 	}
 	else
 	{
 		for (int i = startid + 1; i < vertices.size(); i++)
 			vertices[i].matrix = vertices[i].matrix*vertices[i - 1].matrix;
 	}
-	Edge e;
-	e.id = edges.size();
-	e.info = Eigen::Matrix<float, 6, 6>::Identity() * 1000.0;
-	e.pre_v = idmap[pre_frameid];
-	e.next_v = idmap[next_frameid];
-	e.transform = transform;
-	edges.push_back(e);
+	
 }
 void loadData(std::string config_file,std::vector<Vertex> & vertices, std::vector<Edge> &edges)
 {
@@ -214,10 +225,10 @@ void loadData(std::string config_file,std::vector<Vertex> & vertices, std::vecto
 		if (i == 0)
 		{
 			//path, pre_id, new_frame,transform,vs,es,new_idmap
-			addVEFromDir(wd + "/" + str1+"/_mat/", "",next_frameid,transform, vertices, edges,idmap,edge_only!=1);
+			addVEFromDir(wd + "/" + str1+"/_mat/", str1,"",str2,next_frameid,transform, vertices, edges,idmap,edge_only);
 		}
 
-		addVEFromDir(wd + "/" + str2+"/_mat/",pre_frameid,next_frameid,transform, vertices, edges,idmap,edge_only!=1);
+		addVEFromDir(wd + "/" + str2+"/_mat/",str1,pre_frameid,str2,next_frameid,transform, vertices, edges,idmap,edge_only);
 
 	}
 }
@@ -242,13 +253,25 @@ void outputg2o(std::vector<Vertex> & vertices, std::vector<Edge> &edges)
 
 	}
 }
+
+void outputVerticesPath(std::vector<Vertex> vs,std::string filename)
+{
+	std::fstream file(filename,std::ios::out);
+	for (int i=0;i<vs.size();i++)
+	{
+		file<<vs[i].path<<std::endl;
+	}
+	file.close();
+	
+}
 int main()
 {
-	freopen("1-2.g2o","w",stdout);
+	freopen("1-9.g2o","w",stdout);
 	std::vector<Vertex> vs;
 	std::vector<Edge> es;
 	loadData("config.txt", vs, es);
 	outputg2o(vs, es);
+	outputVerticesPath(vs,"vspath.txt");
 	return 0;
 
 }
