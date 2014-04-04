@@ -10,25 +10,30 @@
 #include <boost/filesystem.hpp>
 typedef Eigen::Matrix< float, 7, 1,0,7,1 > Vector7f;
 
+
+//transform the optimized graph from g2o representation to transform matrix, and store them aside the orignal _mat.txt file
 int main()
 {
-	std::fstream vspath("vspath.txt",std::ios::in);
-	std::fstream finalposefile("final.g2o",std::ios::in);
+	std::fstream vspath("../config/vspath.txt",std::ios::in);
+	std::fstream finalposefile("../config/final.g2o",std::ios::in);
 
 	while(true)
 	{
 		std::string type;
 		Vector7f vec;
 		int id;
-		if (!(finalposefile>>type>>id>>vec[0]>>vec[1]>>vec[2]>>vec[3]>>vec[4]>>vec[5]>>vec[6]))
+		if (!(finalposefile>>type))
+			break;
+		if (type!="VERTEX_SE3:QUAT")
+			continue;
+		
+		if (!(finalposefile>>id>>vec[0]>>vec[1]>>vec[2]>>vec[3]>>vec[4]>>vec[5]>>vec[6]))
 			break;
 		//get mat path
 		std::string path;
 		if (!(vspath>>path))
 			break;;
 		
-		if (type!="VERTEX_SE3:QUAT")
-			continue;
 		//transform quat to matrix
 		Eigen::Matrix4f transform;
 		Eigen::Quaternion<float> q;

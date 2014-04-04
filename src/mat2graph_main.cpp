@@ -9,10 +9,14 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
+//vertex vec[0-2] tx,ty,tz; vec[3-6] (qx,qy,qz,qw),quaternion representation of 3d rotation
 typedef Eigen::Matrix< float, 7, 1,0,7,1 > Vector7f;
+//information matrix of measurement, tx,ty,tz,alpha,beta,theta
 typedef Eigen::Matrix<float, 6, 6,0,6,6> information;
+//edge vec[0-6] follows the same defination of vector7f, the rest is the upper traiangular block of the information matrix, stored in a row-major order
 typedef Eigen::Matrix<float, 28, 1,0,28,1> Vector28f;
 
+//different representations of 3d rigid transformation,  from matrix to vector7f
 Vector7f matrix2quat(Eigen::Matrix4f &matrix)
 {
 	Vector7f ans;
@@ -23,6 +27,7 @@ Vector7f matrix2quat(Eigen::Matrix4f &matrix)
 	return ans;
 }
 
+//graph vertex
 class Vertex
 {
 public:
@@ -41,6 +46,8 @@ public:
 		return ans;
 	}
 };
+
+//graph edge
 class Edge
 {
 public:
@@ -63,14 +70,19 @@ public:
 		return ans;
 	}
 };
+
+//extract frameid from path(filename),filename of the visual odometry information follows the pattern of [0-9]*_mat.txt
 int getFrameIDFromPath(std::string path);
+//used in sort, to sort the files by frameid
 bool isFilenameSmaller(std::string s1,std::string s2)
 {
 	int i1=getFrameIDFromPath(s1);
 	int i2=getFrameIDFromPath(s2);
 	return i1<i2;
 }
-std::vector<std::string> getFilenames(std::string dirname)
+
+//get all files with the extension $ext in the directory $dirname, 
+std::vector<std::string> getFilenames(std::string dirname,std::string ext)
 {
 	boost::filesystem::path dir(dirname);
 	std::vector<std::string> Files;
@@ -79,7 +91,7 @@ std::vector<std::string> getFilenames(std::string dirname)
 
 	for (; pos != end; pos++)
 	if (boost::filesystem::is_regular_file(pos->status()))
-	if (boost::filesystem::extension(*pos) == ".txt")
+	if (boost::filesystem::extension(*pos) == ext)
 	{
 		Files.push_back(pos->path().string());
 	}
@@ -88,6 +100,7 @@ std::vector<std::string> getFilenames(std::string dirname)
 	std::sort(Files.begin(), Files.end(),isFilenameSmaller);
 	return Files;
 }
+
 
 int getFrameIDFromPath(std::string path)
 {
@@ -99,6 +112,7 @@ int getFrameIDFromPath(std::string path)
 	return (atoi(filename.substr(0, se).c_str()));
 }
 
+//transform a number to string
 std::string int2string(int a)
 {
 
@@ -106,6 +120,8 @@ std::string int2string(int a)
 	ss<<a;
 	return ss.str();
 }
+
+//add vertex and edge to the graph, $path is the directory of possible new vertices, $pre_folder is the previous folder, $pre_frameid is the previous frameid, $transform is the transform matrix of the two vertices, set $edge_only to true if you just want to add edge(vertex is already added)
 void addVEFromDir(std::string path, std::string pre_folder,std::string pre_frameid, std::string next_folder,std::string next_frameid, Eigen::Matrix4f &transform, std::vector<Vertex> & vertices, std::vector<Edge> &edges, std::map<std::string, int> &idmap,bool edge_only)
 {
 	if (edge_only)
@@ -122,7 +138,7 @@ void addVEFromDir(std::string path, std::string pre_folder,std::string pre_frame
 		return;
 	}
 	std::vector<std::string> Files;
-	Files=getFilenames(path);
+	Files=getFilenames(path,".txt");
 	
 
 	int startid = vertices.size();
@@ -193,6 +209,8 @@ void addVEFromDir(std::string path, std::string pre_folder,std::string pre_frame
 	}
 	
 }
+
+//load all mat files specified in $config_file
 void loadData(std::string config_file,std::vector<Vertex> & vertices, std::vector<Edge> &edges)
 {
 	vertices.clear();
@@ -232,6 +250,8 @@ void loadData(std::string config_file,std::vector<Vertex> & vertices, std::vecto
 
 	}
 }
+
+//output the graph in g2o format
 void outputg2o(std::vector<Vertex> & vertices, std::vector<Edge> &edges)
 {
 	for (int i = 0; i < vertices.size(); i++)
@@ -254,6 +274,7 @@ void outputg2o(std::vector<Vertex> & vertices, std::vector<Edge> &edges)
 	}
 }
 
+//output all the _mat.txt file paths
 void outputVerticesPath(std::vector<Vertex> vs,std::string filename)
 {
 	std::fstream file(filename,std::ios::out);
@@ -266,12 +287,12 @@ void outputVerticesPath(std::vector<Vertex> vs,std::string filename)
 }
 int main()
 {
-	freopen("1-9.g2o","w",stdout);
+	freopen("../config/1-12.g2o","w",stdout);
 	std::vector<Vertex> vs;
 	std::vector<Edge> es;
-	loadData("config.txt", vs, es);
+	loadData("../config/mat2graph_config.txt", vs, es);
 	outputg2o(vs, es);
-	outputVerticesPath(vs,"vspath.txt");
+	outputVerticesPath(vs,"../config/vspath.txt");
 	return 0;
 
 }

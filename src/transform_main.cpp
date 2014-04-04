@@ -50,6 +50,7 @@ int getFrameIDFromPath(std::string path)
 	return (atoi(filename.substr(0, se).c_str()));
 }
 
+//transform the cloud in $wd+$path by transform matrix stored in $wd+$path+"/mat" with extension $ext, and store the transformed cloud in _newcloud folder
 void transformCloudInDir(std::string wd,std::string path,std::string ext)
 {
 	std::vector<std::string> files;
@@ -73,12 +74,14 @@ void transformCloudInDir(std::string wd,std::string path,std::string ext)
 		pcl::io::savePLYFileBinary(outfile,pc);
 	}
 }
+
+
 int main(int argc,char *argv[])
 {
 	std::string wd;
 	int n;
 
-	std::fstream file("transform_config.txt",std::ios::in);
+	std::fstream file("../config/transformop_config.txt",std::ios::in);
 	std::string ext;
 
 	file>>wd>>n>>ext;

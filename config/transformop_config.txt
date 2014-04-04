@@ -1,0 +1,15 @@
+C:\D\workspace\3d\build\
+12
+.txtn
+data1_0.4
+data2_0.4
+data3_0.4
+data4_0.4
+data5_0.4
+data6_0.4
+data7_0.4
+data8_0.4
+data9_0.4
+data10_0.4
+data11_0.4
+data12_0.4

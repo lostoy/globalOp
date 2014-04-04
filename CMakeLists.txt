@@ -15,11 +15,11 @@ include_directories(${Boost_INCLUDE_DIRS} "C:/Program Files (x86)/Eigen/include"
 
 
 set(
-srcs_op src/main.cpp
+srcs_op src/mat2graph_main.cpp
 )  
 
 set(
-srcs_view src/view_main.cpp)
+srcs_view src/graph2mat_main.cpp)
 
 set(
 srcs_transform src/transform_main.cpp)
@@ -27,12 +27,12 @@ srcs_transform src/transform_main.cpp)
 add_definitions(${PCL_DEFINITIONS})
 include_directories(${PCL_INCLUDE_DIRS})
 
-add_executable(GlobalOp ${srcs_op} )
-add_executable(ViewOp ${srcs_view})
+add_executable(Mat2Graph ${srcs_op} )
+add_executable(Graph2Mat ${srcs_view})
 add_executable(TransformOp ${srcs_transform})
 
-target_link_libraries(GlobalOp ${Boost_LIBRARIES} )
-target_link_libraries(ViewOp ${Boost_LIBRARIES})
+target_link_libraries(Mat2Graph ${Boost_LIBRARIES} )
+target_link_libraries(Graph2Mat ${Boost_LIBRARIES})
 
 target_link_libraries(TransformOp ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
