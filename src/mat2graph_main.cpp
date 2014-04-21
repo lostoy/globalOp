@@ -122,7 +122,7 @@ std::string int2string(int a)
 }
 
 //add vertex and edge to the graph, $path is the directory of possible new vertices, $pre_folder is the previous folder, $pre_frameid is the previous frameid, $transform is the transform matrix of the two vertices, set $edge_only to true if you just want to add edge(vertex is already added)
-void addVEFromDir(std::string path, std::string pre_folder,std::string pre_frameid, std::string next_folder,std::string next_frameid, Eigen::Matrix4f &transform, std::vector<Vertex> & vertices, std::vector<Edge> &edges, std::map<std::string, int> &idmap,bool edge_only)
+void addVEFromDir(std::string path, std::string pre_folder,std::string pre_frameid, std::string next_folder,std::string next_frameid, Eigen::Matrix4f &transform, std::vector<Vertex> & vertices, std::vector<Edge> &edges, std::map<std::string, int> &idmap,bool edge_only,std::string ext)
 {
 	if (edge_only)
 	{
@@ -138,7 +138,7 @@ void addVEFromDir(std::string path, std::string pre_folder,std::string pre_frame
 		return;
 	}
 	std::vector<std::string> Files;
-	Files=getFilenames(path,".txt");
+	Files=getFilenames(path,ext);
 	
 
 	int startid = vertices.size();
@@ -211,18 +211,20 @@ void addVEFromDir(std::string path, std::string pre_folder,std::string pre_frame
 }
 
 //load all mat files specified in $config_file
-void loadData(std::string config_file,std::vector<Vertex> & vertices, std::vector<Edge> &edges)
+void loadData(std::string config_file, std::vector<Vertex> & vertices, std::vector<Edge> &edges, std::string &g2ofile, std::string &matpathfile)
 {
 	vertices.clear();
 	edges.clear();
-	std::string wd;
+	std::string wd,ext;
+	int n;
 
 	std::fstream file(config_file, std::ios::in);
-	int n;
+	
 	file >> wd;
 	file >> n;
-	
-	
+	file >> ext;
+	file >> g2ofile;
+	file >> matpathfile;
 	std::map<std::string, int> idmap;
 	for (int i = 0; i < n; i++)
 	{
@@ -243,35 +245,37 @@ void loadData(std::string config_file,std::vector<Vertex> & vertices, std::vecto
 		if (i == 0)
 		{
 			//path, pre_id, new_frame,transform,vs,es,new_idmap
-			addVEFromDir(wd + "/" + str1+"/_mat/", str1,"",str2,next_frameid,transform, vertices, edges,idmap,edge_only);
+			addVEFromDir(wd + "/" + str1+"/_mat/", str1,"",str2,next_frameid,transform, vertices, edges,idmap,edge_only,ext);
 		}
 
-		addVEFromDir(wd + "/" + str2+"/_mat/",str1,pre_frameid,str2,next_frameid,transform, vertices, edges,idmap,edge_only);
+		addVEFromDir(wd + "/" + str2+"/_mat/",str1,pre_frameid,str2,next_frameid,transform, vertices, edges,idmap,edge_only,ext);
 
 	}
 }
 
 //output the graph in g2o format
-void outputg2o(std::vector<Vertex> & vertices, std::vector<Edge> &edges)
+void outputg2o(std::vector<Vertex> & vertices, std::vector<Edge> &edges,std::string path)
 {
+	std::fstream file(path, std::ios::out);
 	for (int i = 0; i < vertices.size(); i++)
 	{
-		std::cout << "VERTEX_SE3:QUAT " << vertices[i].id << " ";
+		file<< "VERTEX_SE3:QUAT " << vertices[i].id << " ";
 		Vector7f quat = vertices[i].matrix2quat();
 		for (int j = 0; j < 7; j++)
-			std::cout << quat[j] << " ";
-		std::cout << std::endl;
+			file<< quat[j] << " ";
+		file<< std::endl;
 	}
 
 	for (int i = 0; i < edges.size(); i++)
 	{
-		std::cout << "EDGE_SE3:QUAT " << edges[i].pre_v << " " << edges[i].next_v << " ";
+		file<< "EDGE_SE3:QUAT " << edges[i].pre_v << " " << edges[i].next_v << " ";
 		Vector28f quat = edges[i].edge2quat();
 		for (int j = 0; j < 28; j++)
-			std::cout << quat[j] << " ";
-		std::cout << std::endl;
-
+			file<< quat[j] << " ";
+		file<< std::endl;
+		
 	}
+	file.close();
 }
 
 //output all the _mat.txt file paths
@@ -285,14 +289,23 @@ void outputVerticesPath(std::vector<Vertex> vs,std::string filename)
 	file.close();
 	
 }
+
+std::string int2str(int n)
+{
+	std::stringstream ss;
+	ss << n;
+	return ss.str();
+}
 int main()
 {
-	freopen("../config/1-12.g2o","w",stdout);
+	
 	std::vector<Vertex> vs;
 	std::vector<Edge> es;
-	loadData("../config/mat2graph_config.txt", vs, es);
-	outputg2o(vs, es);
-	outputVerticesPath(vs,"../config/vspath.txt");
+	std::string g2ofile,matpathfile;
+	int n;
+	loadData("../config/mat2graph_config.txt", vs, es,g2ofile,matpathfile);
+	outputg2o(vs, es,"../config/"+g2ofile);
+	outputVerticesPath(vs,"../config/"+matpathfile);
 	return 0;
 
 }

@@ -51,11 +51,11 @@ int getFrameIDFromPath(std::string path)
 }
 
 //transform the cloud in $wd+$path by transform matrix stored in $wd+$path+"/mat" with extension $ext, and store the transformed cloud in _newcloud folder
-void transformCloudInDir(std::string wd,std::string path,std::string ext)
+void transformCloudInDir(std::string wd,std::string path,std::string ext,std::string outdir)
 {
 	std::vector<std::string> files;
 	files=getFilenames(wd+"/"+path+"/"+"_mat/",ext);
-	boost::filesystem::create_directory(wd+"/"+path+"/"+"_newcloud");
+	boost::filesystem::create_directory(wd+"/"+path+"/"+outdir);
 	for (int i=0;i<files.size();i++)
 	{
 		//load transform matrix
@@ -67,7 +67,7 @@ void transformCloudInDir(std::string wd,std::string path,std::string ext)
 		//read in ply and transform it to a new dir
 		
 		std::string infile=wd+"/"+path+"/"+"_cloud/"+int2string(getFrameIDFromPath(files[i]))+"_cloud.ply";
-		std::string outfile=wd+"/"+path+"/"+"_newcloud/"+int2string(getFrameIDFromPath(files[i]))+"_newcloud.ply";
+		std::string outfile = wd + "/" + path + "/" + outdir+"/" + int2string(getFrameIDFromPath(files[i])) + outdir+".ply";
 		pcl::PointCloud<pcl::PointXYZRGBA> pc;
 		pcl::io::loadPLYFile(infile,pc);
 		pcl::transformPointCloud(pc,pc,transform);
@@ -82,15 +82,15 @@ int main(int argc,char *argv[])
 	int n;
 
 	std::fstream file("../config/transformop_config.txt",std::ios::in);
-	std::string ext;
+	std::string ext,outdir;
 
-	file>>wd>>n>>ext;
+	file>>wd>>n>>ext>>outdir;
 	for (int i=0;i<n;i++)
 	{
 		
 		std::string path;
 		file>>path;
-		transformCloudInDir(wd,path,ext);
+		transformCloudInDir(wd,path,ext,outdir);
 	}
 
 	return 0;

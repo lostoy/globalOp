@@ -24,16 +24,24 @@ srcs_view src/graph2mat_main.cpp)
 set(
 srcs_transform src/transform_main.cpp)
 
+set(
+srcs_manhattan src/manhattan_main.cpp)
+
 add_definitions(${PCL_DEFINITIONS})
 include_directories(${PCL_INCLUDE_DIRS})
+include_directories(src/sensor/include ${FLANN_INCLUDE_DIRS})
+
+add_subdirectory(src/sensor)
 
 add_executable(Mat2Graph ${srcs_op} )
 add_executable(Graph2Mat ${srcs_view})
 add_executable(TransformOp ${srcs_transform})
+add_executable(Manhattan ${srcs_manhattan})
 
 target_link_libraries(Mat2Graph ${Boost_LIBRARIES} )
 target_link_libraries(Graph2Mat ${Boost_LIBRARIES})
 
 target_link_libraries(TransformOp ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+target_link_libraries(Manhattan ${Boost_LIBRARIES} ${PCL_LIBRARIES} sensor)
 
 

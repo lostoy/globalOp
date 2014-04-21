@@ -1,7 +1,7 @@
 C:\D\workspace\3d\build\
 12
+.txtn
 .txtnmhtn
-_mhtcloud
 data1_0.4
 data2_0.4
 data3_0.4

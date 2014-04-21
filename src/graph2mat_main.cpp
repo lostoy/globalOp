@@ -11,11 +11,24 @@
 typedef Eigen::Matrix< float, 7, 1,0,7,1 > Vector7f;
 
 
+std::string int2str(int n)
+{
+	std::stringstream ss;
+	ss << n;
+	return ss.str();
+}
+
 //transform the optimized graph from g2o representation to transform matrix, and store them aside the orignal _mat.txt file
 int main()
 {
-	std::fstream vspath("../config/vspath.txt",std::ios::in);
-	std::fstream finalposefile("../config/final.g2o",std::ios::in);
+
+	std::fstream file("../config/graph2mat_config.txt");
+	
+	std::string ext,matpathfile,finalpose;
+	file >> ext >> matpathfile>>finalpose;
+	file.close();
+	std::fstream vspath("../config/"+matpathfile,std::ios::in);
+	std::fstream finalposefile("../config/"+finalpose,std::ios::in);
 
 	while(true)
 	{
@@ -52,7 +65,7 @@ int main()
 
 		
 		boost::filesystem::path s(path);
-		s.replace_extension("txtn");
+		s.replace_extension(ext);
 		
 		//output new mat
 		std::fstream mat_file(s.c_str(),std::ios::out);
